@@ -9,7 +9,25 @@ class ChatScreen extends StatefulWidget {
 
 class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _controller = TextEditingController();
-  List<Map<String, dynamic>> _message = [];
+  List<Map<String, dynamic>> _messages = [];
+  void _sendMessage() {
+    String message = _controller.text.trim();
+    if (message.isNotEmpty) {
+      setState(() {
+        _messages.add({'type': 'sent', 'message': message});
+        _controller.clear();
+      });
+      _receiveResponse();
+    }
+  }
+
+  void _receiveResponse() {
+    Future.delayed(Duration(seconds: 1), () {
+      setState(() {
+        _messages.add({'type': 'received', 'message': 'This is a response'});
+      });
+    });
+  }
 
   @override
   void initState() {
@@ -21,10 +39,10 @@ class _ChatScreenState extends State<ChatScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: PreferredSize(
-        preferredSize: Size.fromHeight(80), // Default AppBar height
+        preferredSize: Size.fromHeight(80),
         child: ClipRRect(
           borderRadius: BorderRadius.only(
-            bottomLeft: Radius.circular(30), // Adjust radius as needed
+            bottomLeft: Radius.circular(30),
             bottomRight: Radius.circular(30),
           ),
           child: AppBar(
@@ -50,54 +68,106 @@ class _ChatScreenState extends State<ChatScreen> {
         ),
       ),
       body: Column(
-        children: [],
-      ),
-      bottomNavigationBar: BottomAppBar(
-        color: Color(0xFF213687),
-        shape: CircularNotchedRectangle(),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            IconButton(
-              onPressed: () {
-                print("Add attachment");
+        children: [
+          Expanded(
+            child: ListView.builder(
+              padding: EdgeInsets.all(10.0),
+              itemCount: _messages.length,
+              itemBuilder: (context, index) {
+                final msg = _messages[index];
+                bool isSent = msg['type'] == 'sent';
+                return Align(
+                  alignment:
+                      isSent ? Alignment.centerRight : Alignment.centerLeft,
+                  child: Container(
+                    padding: EdgeInsets.all(16.0),
+                    margin: EdgeInsets.symmetric(vertical: 4.0),
+                    constraints: BoxConstraints(
+                      maxWidth: MediaQuery.of(context).size.width * 0.7,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isSent ? Color(0xFF213687) : Color(0xFFE6E6E6),
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(24.0),
+                        topRight: Radius.circular(24.0),
+                        bottomLeft:
+                            isSent ? Radius.circular(24.0) : Radius.zero,
+                        bottomRight:
+                            isSent ? Radius.zero : Radius.circular(24.0),
+                      ),
+                    ),
+                    child: Text(
+                      msg['message']!,
+                      style: TextStyle(
+                        color: isSent ? Colors.white : Colors.black,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                );
               },
-              icon: Icon(Icons.add_rounded, color: Colors.blue, size: 28),
             ),
-            Spacer(),
-            Flexible(
-              flex: 12,
-              child: TextField(
-                decoration: InputDecoration(
-                  hintText: "Type a message...",
-                  contentPadding:
-                      EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24),
-                    borderSide: BorderSide(color: Colors.white),
+          ),
+          Container(
+            color: Color(0xFF213687),
+            child: Padding(
+              padding: EdgeInsets.all(10.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  IconButton(
+                    onPressed: () {
+                      print("Add attachment");
+                    },
+                    icon: Icon(
+                      Icons.add_rounded,
+                      color: Colors.white,
+                      size: 32,
+                      weight: 20,
+                    ),
                   ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24),
-                    borderSide: BorderSide(color: Colors.white),
+                  Spacer(),
+                  Flexible(
+                    flex: 12,
+                    child: TextField(
+                      decoration: InputDecoration(
+                        hintText: "Type a message...",
+                        hintStyle: TextStyle(
+                            color: Colors.white, fontWeight: FontWeight.bold),
+                        contentPadding:
+                            EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(24),
+                          borderSide: BorderSide(color: Colors.white),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(24),
+                          borderSide: BorderSide(color: Colors.white),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(24),
+                          borderSide: BorderSide(color: Colors.white),
+                        ),
+                        filled: true,
+                        fillColor: Color(0xFF213687),
+                      ),
+                      style: TextStyle(color: Colors.white),
+                      controller: _controller,
+                    ),
                   ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24),
-                    borderSide: BorderSide(color: Colors.white),
+                  Spacer(),
+                  IconButton(
+                    onPressed: () {
+                      _sendMessage();
+                    },
+                    icon:
+                        Icon(Icons.send_rounded, color: Colors.white, size: 32),
                   ),
-                  filled: true,
-                  fillColor: Colors.grey[200],
-                ),
+                ],
               ),
             ),
-            Spacer(),
-            IconButton(
-              onPressed: () {
-                print("Send message");
-              },
-              icon: Icon(Icons.send_rounded, color: Colors.white, size: 28),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
