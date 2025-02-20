@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:riya_chatbot/services/chat_service.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -9,29 +10,35 @@ class ChatScreen extends StatefulWidget {
 
 class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _controller = TextEditingController();
+  final APIService _apiService = APIService();
   List<Map<String, dynamic>> _messages = [];
-  void _sendMessage() {
+  bool _isLoading = false;
+
+  void _sendMessage() async {
     String message = _controller.text.trim();
-    if (message.isNotEmpty) {
-      setState(() {
-        _messages.add({'type': 'sent', 'message': message});
-        _controller.clear();
-      });
-      _receiveResponse();
-    }
-  }
+    if (message.isEmpty) return;
 
-  void _receiveResponse() {
-    Future.delayed(Duration(seconds: 1), () {
-      setState(() {
-        _messages.add({'type': 'received', 'message': 'This is a response'});
-      });
+    setState(() {
+      _messages.add({'type': 'sent', 'message': message});
+      _controller.clear();
+      _isLoading = true;
     });
-  }
 
-  @override
-  void initState() {
-    super.initState();
+    try {
+      String response = await _apiService.askQuestion(message);
+      setState(() {
+        _messages.add({'type': 'received', 'message': response});
+      });
+    } catch (e) {
+      setState(() {
+        _messages.add(
+            {'type': 'received', 'message': 'Error: Unable to fetch response'});
+      });
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   @override
@@ -97,7 +104,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       ),
                     ),
                     child: Text(
-                      msg['message']!,
+                      msg['message'],
                       style: TextStyle(
                         color: isSent ? Colors.white : Colors.black,
                         fontSize: 16,
@@ -108,6 +115,11 @@ class _ChatScreenState extends State<ChatScreen> {
               },
             ),
           ),
+          if (_isLoading)
+            Padding(
+              padding: EdgeInsets.all(10),
+              child: CircularProgressIndicator(),
+            ),
           Container(
             color: Color(0xFF213687),
             child: Padding(
@@ -119,12 +131,8 @@ class _ChatScreenState extends State<ChatScreen> {
                     onPressed: () {
                       print("Add attachment");
                     },
-                    icon: Icon(
-                      Icons.add_rounded,
-                      color: Colors.white,
-                      size: 32,
-                      weight: 20,
-                    ),
+                    icon:
+                        Icon(Icons.add_rounded, color: Colors.white, size: 32),
                   ),
                   Spacer(),
                   Flexible(
@@ -157,9 +165,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   ),
                   Spacer(),
                   IconButton(
-                    onPressed: () {
-                      _sendMessage();
-                    },
+                    onPressed: _sendMessage,
                     icon:
                         Icon(Icons.send_rounded, color: Colors.white, size: 32),
                   ),
